@@ -19,6 +19,11 @@ public interface IImageOverlayService
     bool ShouldShowBadge(BadgeInfo badge, ImageTypeConfig imageConfig);
 
     /// <summary>
+    /// Filters badges by the config (enabled badges, show mode) and orders them by panel, for non-image display.
+    /// </summary>
+    List<BadgeInfo> SelectBadgesForDisplay(List<BadgeInfo> badges, ImageTypeConfig imageConfig);
+
+    /// <summary>
     /// Reloads all badge images from resources and custom badges directory.
     /// </summary>
     void ReloadBadges();

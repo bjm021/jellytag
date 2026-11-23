@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Configuration/configPage.html" />
+    <EmbeddedResource Include="Web/detail.js" />
     <EmbeddedResource Include="Assets/*.svg" />
     <EmbeddedResource Include="Assets/*.png" />
   </ItemGroup>

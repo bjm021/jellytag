@@ -72,7 +72,15 @@ public class DetectFormatsTests
     [InlineData("eac3", "Dolby Digital Plus + Dolby Atmos", 6, "atmos,5.1")]
     [InlineData("dts", "DTS-HD MA + DTS:X", 8, "dtsx,dtshdma,7.1")]
     [InlineData("dts", "DTS-HD MA", 6, "dtshdma,5.1")]
-    [InlineData("aac", "LC", 2, "stereo")]
+    [InlineData("aac", "LC", 2, "aac,stereo")]
+    [InlineData("opus", "", 2, "opus,stereo")]
+    [InlineData("opus", "", 6, "opus,5.1")]
+    [InlineData("flac", "", 6, "flac,5.1")]
+    [InlineData("dts", "DTS-HD HRA", 8, "dtshd,7.1")]
+    [InlineData("dts", "DTS", 6, "dts,5.1")]
+    [InlineData("dts", "DTS-HD MA + DTS:X", 6, "dtsx,dtshdma,5.1")]
+    [InlineData("eac3", "Dolby Digital Plus", 6, "eac3,5.1")]
+    [InlineData("ac3", "", 6, "ac3,5.1")]
     public void AudioFormats(string codec, string profile, int channels, string expected)
     {
         Assert.Equal(expected, Audio(codec, profile, channels));

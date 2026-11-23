@@ -3,6 +3,10 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jellyfin.Plugin.JellyTag.Configuration;
 using Jellyfin.Plugin.JellyTag.Services;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +23,7 @@ public partial class JellyTagController : ControllerBase
     private readonly IImageCacheService _cacheService;
     private readonly IImageOverlayService _overlayService;
     private readonly IQualityDetectionService _qualityService;
+    private readonly ILibraryManager _libraryManager;
 
     private static readonly string[] SupportedBadgeExtensions = { ".svg", ".png", ".jpg", ".jpeg" };
 
@@ -37,11 +42,12 @@ public partial class JellyTagController : ControllerBase
     /// <summary>
     /// Initializes a new instance of the <see cref="JellyTagController"/> class.
     /// </summary>
-    public JellyTagController(IImageCacheService cacheService, IImageOverlayService overlayService, IQualityDetectionService qualityService)
+    public JellyTagController(IImageCacheService cacheService, IImageOverlayService overlayService, IQualityDetectionService qualityService, ILibraryManager libraryManager)
     {
         _cacheService = cacheService;
         _overlayService = overlayService;
         _qualityService = qualityService;
+        _libraryManager = libraryManager;
     }
 
     /// <summary>
@@ -137,6 +143,13 @@ public partial class JellyTagController : ControllerBase
             "dtsx" => "badge-dtsx.svg",
             "truehd" => "badge-truehd.svg",
             "dtshdma" => "badge-dtshdma.svg",
+            "flac" => "badge-flac.svg",
+            "dtshd" => "badge-dtshd.svg",
+            "dts" => "badge-dts.svg",
+            "eac3" => "badge-eac3.svg",
+            "ac3" => "badge-ac3.svg",
+            "aac" => "badge-aac.svg",
+            "opus" => "badge-opus.svg",
             "5.1" => "badge-5_1.svg",
             "7.1" => "badge-7_1.svg",
             "stereo" => "badge-stereo.svg",
@@ -333,8 +346,88 @@ public partial class JellyTagController : ControllerBase
             return BadRequest("Invalid badge key");
         }
 
-        var stem = BadgeFileStem(badgeKey);
+        return ServeBadgeFile(BadgeFileStem(badgeKey));
+    }
 
+    /// <summary>
+    /// Gets an embedded or custom badge image by its file name stem (e.g. "badge-dtshd", "flag-eng").
+    /// </summary>
+    [HttpGet("BadgeImage/{name}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetBadgeImage(string name)
+    {
+        if (!SafeBadgeKeyRegex().IsMatch(name)
+            || !(name.StartsWith("badge-", StringComparison.OrdinalIgnoreCase) || name.StartsWith("flag-", StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest("Invalid badge name");
+        }
+
+        return ServeBadgeFile(name.ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Gets the badges to show on the detail page of an item.
+    /// </summary>
+    [HttpGet("ItemBadges/{itemId}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetItemBadges(Guid itemId)
+    {
+        var config = Plugin.Instance?.Configuration;
+        var empty = new { Height = 0, Badges = Array.Empty<object>() };
+        if (config == null || !config.Enabled || !config.ShowOnDetailPage)
+        {
+            return Ok(empty);
+        }
+
+        var item = _libraryManager.GetItemById(itemId);
+        if (item is not (Movie or Series or Season or Episode or Video))
+        {
+            return Ok(empty);
+        }
+
+        var collectionFolders = _libraryManager.GetCollectionFolders(item);
+        if (collectionFolders.Count == 0
+            || collectionFolders.Any(f => config.ExcludedLibraryIds.Contains(f.Id.ToString("N"))))
+        {
+            return Ok(empty);
+        }
+
+        var badges = _overlayService
+            .SelectBadgesForDisplay(_qualityService.DetectAllBadges(item), config.PosterConfig)
+            .Where(b => b.Category != BadgeCategory.Subtitle && !string.IsNullOrEmpty(b.ResourceFileName))
+            .Select(b => new { Key = b.BadgeKey, Image = Path.GetFileNameWithoutExtension(b.ResourceFileName) })
+            .ToArray();
+
+        return Ok(new { Height = Math.Clamp(config.DetailPageBadgeHeight, 12, 80), Badges = badges });
+    }
+
+    /// <summary>
+    /// Serves the script that renders badges on item detail pages.
+    /// </summary>
+    [HttpGet("detail.js")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetDetailScript()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(r => r.EndsWith(".Web.detail.js", StringComparison.Ordinal));
+        var stream = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            return NotFound();
+        }
+
+        Response.Headers.CacheControl = "no-cache";
+        return File(stream, "application/javascript");
+    }
+
+    private IActionResult ServeBadgeFile(string stem)
+    {
         // Check custom badges first: SVG > PNG > JPG > JPEG
         var dataFolder = Plugin.Instance?.BadgeFolderPath;
         if (!string.IsNullOrEmpty(dataFolder))

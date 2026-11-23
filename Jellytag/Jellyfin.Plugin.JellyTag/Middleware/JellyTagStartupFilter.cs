@@ -14,6 +14,7 @@ public class JellyTagStartupFilter : IStartupFilter
         return app =>
         {
             app.UseMiddleware<ImageOverlayMiddleware>();
+            app.UseMiddleware<WebInjectionMiddleware>();
             next(app);
         };
     }

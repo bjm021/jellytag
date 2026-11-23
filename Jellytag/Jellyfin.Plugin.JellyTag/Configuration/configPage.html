@@ -142,6 +142,39 @@
                         </div>
                     </details>
 
+                    <!-- Detection -->
+                    <details class="jellytag-section">
+                        <summary>Detection</summary>
+                        <div class="jellytag-section-body">
+                            <div class="selectContainer">
+                                <label class="selectLabel" for="AudioTrackMode">Audio badge source</label>
+                                <select id="AudioTrackMode" is="emby-select">
+                                    <option value="DefaultTrack">Default audio track</option>
+                                    <option value="BestTrack">Best of all audio tracks</option>
+                                </select>
+                                <div class="fieldDescription">Which audio tracks the audio badges are read from. A film whose default track is stereo but that also has a DTS-HD MA track shows DTS-HD MA with "Best".</div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Detail page -->
+                    <details class="jellytag-section">
+                        <summary>Item detail pages</summary>
+                        <div class="jellytag-section-body">
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label class="emby-checkbox-label">
+                                    <input id="ShowOnDetailPage" type="checkbox" is="emby-checkbox" />
+                                    <span>Show badges on item detail pages</span>
+                                </label>
+                                <div class="fieldDescription">Adds a badge row to the web client's movie, series and episode pages, using the poster badge settings. Reload the page after changing this.</div>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="DetailPageBadgeHeight">Badge height (px)</label>
+                                <input id="DetailPageBadgeHeight" type="number" min="12" max="80" step="1" is="emby-input" />
+                            </div>
+                        </div>
+                    </details>
+
                     <!-- Performance -->
                     <details class="jellytag-section">
                         <summary>Performance</summary>
@@ -221,7 +254,7 @@
             },
             Audio: {
                 title: 'Audio Badges',
-                badges: [{id:'Atmos',key:'atmos',label:'Dolby Atmos'},{id:'DtsX',key:'dtsx',label:'DTS:X'},{id:'TrueHD',key:'truehd',label:'Dolby TrueHD'},{id:'DtsHdMa',key:'dtshdma',label:'DTS-HD MA'},{id:'Channel',key:'channel',label:'Channel Layout (7.1/5.1/Stereo)'}],
+                badges: [{id:'Atmos',key:'atmos',label:'Dolby Atmos'},{id:'DtsX',key:'dtsx',label:'DTS:X'},{id:'TrueHD',key:'truehd',label:'Dolby TrueHD'},{id:'DtsHdMa',key:'dtshdma',label:'DTS-HD MA'},{id:'Flac',key:'flac',label:'FLAC'},{id:'DtsHd',key:'dtshd',label:'DTS-HD HRA'},{id:'Eac3',key:'eac3',label:'Dolby Digital Plus'},{id:'Dts',key:'dts',label:'DTS'},{id:'Ac3',key:'ac3',label:'Dolby Digital'},{id:'Aac',key:'aac',label:'AAC'},{id:'Opus',key:'opus',label:'Opus'},{id:'Channel',key:'channel',label:'Channel Layout (7.1/5.1/Stereo)'}],
                 hasShowMode: true,
                 showModeOptions: [{v:'Highest',l:'Highest only'},{v:'All',l:'All'}]
             },
@@ -251,6 +284,7 @@
             'hdr10':'HDR10', 'hdr10plus':'HDR10+', 'dv':'Dolby Vision', 'hlg':'HLG', 'hdr':'Other HDR', '3d':'3D',
             'h264':'H.264', 'hevc':'HEVC', 'av1':'AV1', 'vp9':'VP9',
             'atmos':'Atmos', 'dtsx':'DTS:X', 'truehd':'TrueHD', 'dtshdma':'DTS-HD MA',
+            'flac':'FLAC', 'dtshd':'DTS-HD HRA', 'eac3':'Dolby Digital Plus', 'dts':'DTS', 'ac3':'Dolby Digital', 'aac':'AAC', 'opus':'Opus',
             '7.1':'7.1', '5.1':'5.1', 'stereo':'Stereo'
         };
         DV_PROFILES.forEach(function(p) { KEY_LABELS['dvp' + p] = 'DV P' + p; });
@@ -260,6 +294,7 @@
             'hdr10':'HDR10', 'hdr10plus':'HDR10+', 'dv':'DV', 'hlg':'HLG', 'hdr':'HDR', '3d':'3D',
             'h264':'H.264', 'hevc':'HEVC', 'av1':'AV1', 'vp9':'VP9',
             'atmos':'ATMOS', 'dtsx':'DTS:X', 'truehd':'TrueHD', 'dtshdma':'DTS-HD MA',
+            'flac':'FLAC', 'dtshd':'DTS-HD', 'eac3':'DD+', 'dts':'DTS', 'ac3':'DD', 'aac':'AAC', 'opus':'Opus',
             '7.1':'7.1', '5.1':'5.1', 'stereo':'STEREO'
         };
 
@@ -1069,6 +1104,9 @@
             config.Enabled = q('Enabled').checked;
             config.ThumbnailSameAsPoster = q('ThumbnailSameAsPoster').checked;
             config.ShowOnEpisodes = q('ShowOnEpisodes').checked;
+            config.AudioTrackMode = q('AudioTrackMode').value;
+            config.ShowOnDetailPage = q('ShowOnDetailPage').checked;
+            config.DetailPageBadgeHeight = Math.min(80, Math.max(12, parseInt(q('DetailPageBadgeHeight').value, 10) || 28));
             config.ThumbnailSizeReduction = parseInt(q('ThumbnailSizeReduction').value, 10) || 0;
             config.PosterConfig = collectImageTypeConfig('Poster');
             config.ThumbnailConfig = collectImageTypeConfig('Thumb');
@@ -1223,6 +1261,9 @@
                 q('Enabled').checked = config.Enabled;
                 q('ThumbnailSameAsPoster').checked = config.ThumbnailSameAsPoster === true;
                 q('ShowOnEpisodes').checked = config.ShowOnEpisodes !== false;
+                q('AudioTrackMode').value = config.AudioTrackMode || 'DefaultTrack';
+                q('ShowOnDetailPage').checked = config.ShowOnDetailPage !== false;
+                q('DetailPageBadgeHeight').value = config.DetailPageBadgeHeight || 28;
                 q('ThumbnailSizeReduction').value = config.ThumbnailSizeReduction != null ? config.ThumbnailSizeReduction : 10;
 
                 loadImageTypeConfig('Poster', config.PosterConfig || {});

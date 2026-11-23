@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.JellyTag.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Dto;
@@ -327,7 +328,8 @@ public class QualityDetectionService : IQualityDetectionService
             BadgeCategory.Audio => badge.BadgeKey switch
             {
                 "atmos" => 0, "truehd" => 1, "dtsx" => 2, "dtshdma" => 3,
-                "7.1" => 4, "5.1" => 5, "stereo" => 6, _ => 7
+                "flac" => 4, "dtshd" => 5, "eac3" => 6, "dts" => 7, "ac3" => 8, "aac" => 9, "opus" => 10,
+                "7.1" => 11, "5.1" => 12, "stereo" => 13, _ => 14
             },
             _ => 0
         };
@@ -377,12 +379,19 @@ public class QualityDetectionService : IQualityDetectionService
             }
         }
 
-        // Audio detection - prefer the default audio track
+        // Audio detection: the default track, or the best of all tracks (AudioTrackMode)
         var allAudioStreams = streams.Where(s => s.Type == MediaStreamType.Audio).ToList();
         if (allAudioStreams.Count > 0)
         {
-            var defaultStream = allAudioStreams.FirstOrDefault(s => s.IsDefault) ?? allAudioStreams[0];
-            badges.AddRange(DetectAudio(new List<MediaStream> { defaultStream }));
+            if (Plugin.Instance?.Configuration.AudioTrackMode == AudioTrackMode.BestTrack)
+            {
+                badges.AddRange(DetectAudio(allAudioStreams));
+            }
+            else
+            {
+                var defaultStream = allAudioStreams.FirstOrDefault(s => s.IsDefault) ?? allAudioStreams[0];
+                badges.AddRange(DetectAudio(new List<MediaStream> { defaultStream }));
+            }
         }
 
         // Language detection - always detect all, filtering by mode happens in ShouldShowBadge
@@ -633,13 +642,24 @@ public class QualityDetectionService : IQualityDetectionService
             if (profile.Contains("DTS:X") || profile.Contains("DTS-X") || profile.Contains("DTSX")) formats.Add("dtsx");
             if (profile.Contains("DTS-HD MA") || profile.Contains("DTS-HD MASTER") || (codec == "DTS" && profile.Contains("MA")))
                 formats.Add("dtshdma");
+            else if (codec == "DTS" && profile.Contains("DTS-HD")) formats.Add("dtshd");
+            else if (codec == "DTS") formats.Add("dts");
+
+            if (codec == "FLAC") formats.Add("flac");
+            if (codec == "EAC3") formats.Add("eac3");
+            if (codec == "AC3") formats.Add("ac3");
+            if (codec == "AAC") formats.Add("aac");
+            if (codec == "OPUS") formats.Add("opus");
         }
 
-        foreach (var key in new[] { "atmos", "truehd", "dtsx", "dtshdma" }.Where(formats.Contains))
+        // A carrier codec is not listed on top of the format it carries (E-AC-3 with Atmos, DTS core under DTS:X).
+        if (formats.Contains("atmos")) formats.Remove("eac3");
+        if (formats.Contains("dtsx")) { formats.Remove("dts"); formats.Remove("dtshd"); }
+
+        foreach (var key in new[] { "atmos", "truehd", "dtsx", "dtshdma", "flac", "dtshd", "eac3", "dts", "ac3", "aac", "opus" }.Where(formats.Contains))
         {
             badges.Add(new BadgeInfo { Category = BadgeCategory.Audio, BadgeKey = key, ResourceFileName = $"badge-{key}.svg" });
         }
-
 
         if (bestChannels >= 8)
             badges.Add(new BadgeInfo { Category = BadgeCategory.Audio, BadgeKey = "7.1", ResourceFileName = "badge-7_1.svg" });

@@ -55,6 +55,18 @@ public enum LanguageFilterMode
 }
 
 /// <summary>
+/// Which audio track(s) the audio badges are detected from.
+/// </summary>
+public enum AudioTrackMode
+{
+    /// <summary>Only the default (or first) audio track.</summary>
+    DefaultTrack,
+
+    /// <summary>Every audio track; the best format wins.</summary>
+    BestTrack
+}
+
+/// <summary>
 /// How a subtitle language is written: "EN", "CC EN" or "VOSTEN".
 /// </summary>
 public enum SubtitleLabel
@@ -213,6 +225,21 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Whether episode images get badges. Off keeps a series' badges on its poster only.
     /// </summary>
     public bool ShowOnEpisodes { get; set; }
+
+    /// <summary>
+    /// Whether audio badges come from the default audio track only or from the best of all tracks.
+    /// </summary>
+    public AudioTrackMode AudioTrackMode { get; set; } = AudioTrackMode.DefaultTrack;
+
+    /// <summary>
+    /// Whether the badges are also shown on the item detail pages of the web client.
+    /// </summary>
+    public bool ShowOnDetailPage { get; set; } = true;
+
+    /// <summary>
+    /// Height of the badges on the detail page, in pixels.
+    /// </summary>
+    public int DetailPageBadgeHeight { get; set; } = 28;
 
     /// <summary>
     /// Size reduction (in percentage points) applied to badge sizes when ThumbnailSameAsPoster is enabled.
@@ -475,7 +502,7 @@ public class PluginConfiguration : BasePluginConfiguration
         {
             Enabled = true, Order = 3, Position = BadgePosition.TopLeft,
             Layout = BadgeLayout.Vertical, SizePercent = 15, MarginPercent = 2f, GapPercent = 10f,
-            EnabledBadges = new List<string> { "atmos", "dtsx", "truehd", "dtshdma", "7.1", "5.1", "stereo" }
+            EnabledBadges = new List<string> { "atmos", "truehd", "dtsx", "dtshdma", "flac", "dtshd", "eac3", "dts", "ac3", "aac", "opus", "7.1", "5.1", "stereo" }
         };
         config.LanguagePanel = new BadgePanelSettings
         {
@@ -517,7 +544,7 @@ public class PluginConfiguration : BasePluginConfiguration
         {
             Enabled = true, Order = 3, Position = BadgePosition.TopLeft,
             Layout = BadgeLayout.Vertical, SizePercent = 10, MarginPercent = 2.5f, GapPercent = 10f,
-            EnabledBadges = new List<string> { "atmos", "dtsx", "truehd", "dtshdma", "7.1", "5.1", "stereo" }
+            EnabledBadges = new List<string> { "atmos", "truehd", "dtsx", "dtshdma", "flac", "dtshd", "eac3", "dts", "ac3", "aac", "opus", "7.1", "5.1", "stereo" }
         };
         config.LanguagePanel = new BadgePanelSettings
         {

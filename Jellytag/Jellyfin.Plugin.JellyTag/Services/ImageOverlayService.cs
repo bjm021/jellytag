@@ -30,6 +30,7 @@ public class ImageOverlayService : IImageOverlayService, IDisposable
         { "4k", "4K" }, { "1080p", "1080p" }, { "720p", "720p" }, { "sd", "SD" },
         { "hdr10", "HDR10" }, { "hdr10plus", "HDR10+" }, { "dv", "DV" }, { "hlg", "HLG" },
         { "atmos", "ATMOS" }, { "dtsx", "DTS:X" }, { "truehd", "TrueHD" }, { "dtshdma", "DTS-HD MA" },
+        { "flac", "FLAC" }, { "dtshd", "DTS-HD" }, { "dts", "DTS" }, { "eac3", "DD+" }, { "ac3", "DD" }, { "aac", "AAC" }, { "opus", "Opus" },
         { "7.1", "7.1" }, { "5.1", "5.1" }, { "stereo", "STEREO" },
         { "hdr", "HDR" }, { "3d", "3D" },
         { "UHD4K", "4K" }, { "FHD1080p", "1080p" }, { "HD720p", "720p" },
@@ -120,6 +121,23 @@ public class ImageOverlayService : IImageOverlayService, IDisposable
         }
 
         return panel.EnabledBadges.Contains(badge.BadgeKey, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public List<BadgeInfo> SelectBadgesForDisplay(List<BadgeInfo> badges, ImageTypeConfig imageConfig)
+    {
+        var selected = new List<BadgeInfo>();
+        foreach (var (panel, _) in GetOrderedPanels(imageConfig))
+        {
+            if (!panel.Enabled) continue;
+
+            var panelBadges = badges
+                .Where(b => GetPanelForCategory(b.Category, imageConfig) == panel && ShouldShowBadge(b, imageConfig))
+                .ToList();
+            selected.AddRange(ApplyShowMode(panel.ShowMode, panelBadges));
+        }
+
+        return selected;
     }
 
     /// <summary>
