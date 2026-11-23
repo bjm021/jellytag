@@ -21,8 +21,12 @@ description: >
 artifacts:
   - "Jellyfin.Plugin.JellyTag.dll"
 changelog: |
-  - Save no longer fails silently: an invalid setting turns red while typing, and
-    Save opens its section and points to it.
-  - Clearer settings: units in the size, margin and gap labels, shorter
-    descriptions, gap up to 100%.
-  - "Join the previous panel's row" is grayed out when it has no effect.
+  - Seven more audio badges: FLAC, DTS-HD HRA, DTS, Dolby Digital, Dolby Digital
+    Plus, AAC and Opus. Tick them in the Audio panel to show them.
+  - New "Audio badge source" setting: read the audio badges from the default
+    track or from the best of all tracks.
+  - Badges on item detail pages of the web client (movies, series, seasons and
+    episodes), with an on/off switch and a size setting.
+  - New plugin identity (GUID): this build is installed from its own plugin
+    repository and no longer updates from the original catalog. Uninstall the
+    original JellyTag before installing it.
