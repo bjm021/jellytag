@@ -1,7 +1,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 project := "Jellytag/Jellyfin.Plugin.JellyTag"
-plugin_guid := "f4a2e8c1-9b3d-4f7a-b6c5-2d8e1a3f9b04"
+plugin_guid := "bac81a9b-ef92-4c18-a96a-7c34e4695836"
 publish_dir := "artifacts/publish"
 
 jellyfin_image := "docker.io/jellyfin/jellyfin:12.4.20261026-211555"
